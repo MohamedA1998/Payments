@@ -4,10 +4,10 @@ A unified Laravel package for handling payments with multiple gateways (MyFatoor
 
 ## Installation
 
-Install the package via Composer:
+Install the package via Composer (after publishing or configuring as a local package):
 
 ```bash
-composer require payments
+composer require mohamed/payments
 ```
 
 ## Configuration
