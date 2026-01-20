@@ -1,5 +1,5 @@
 {
-    "name": "mohamed/payments",
+    "name": "payments",
     "description": "A Laravel package for handling payments",
     "type": "library",
     "license": "MIT",
