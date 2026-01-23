@@ -22,30 +22,42 @@ This will create a `config/payments.php` file in your Laravel application.
 
 ## Usage
 
-The package provides two levels of usage:
+All actions are defined in `config/payments.php` - no need for separate gateway classes!
 
-### 1. Unified Gateway Layer (Recommended)
-
-Use the unified gateway interface for consistent API across all payment providers:
+### Simple Usage (Recommended)
 
 ```php
 use Payments\Facades\Payments;
 
-// All gateways support: pay(), refund(), status()
-$response = Payments::gateway('paymob')->pay([...]);
-$response = Payments::gateway('myfatoorah')->refund([...]);
-$response = Payments::gateway('stripe')->status([...]);
+// Use helper functions directly - uses default driver from config
+$response = Payments::pay([...]);
+$response = Payments::refund([...]);
+$response = Payments::status([...]);
+
+// Or specify driver
+$response = Payments::pay([...], 'myfatoorah');
+$response = Payments::refund([...], 'paymob');
 ```
 
-### 2. Low-Level Driver (Full Control)
-
-For custom endpoints or advanced usage:
+### Using Driver/Gateway
 
 ```php
-$response = Payments::driver('paymob')->action('pay', $payload, [
-    'method'   => 'POST',
-    'endpoint' => '/acceptance/payment_keys',
-]);
+// All gateways support: pay(), refund(), status() - from config
+$response = Payments::driver('paymob')->pay([...]);
+$response = Payments::driver('myfatoorah')->refund([...]);
+$response = Payments::driver('stripe')->status([...]);
+
+// Or use gateway() - same as driver()
+$response = Payments::gateway('paymob')->pay([...]);
+```
+
+### Custom Actions
+
+```php
+// Call any action defined in config
+$response = Payments::action('custom_action', [...]);
+$response = Payments::driver('paymob')->action('custom_action', [...]);
+$response = Payments::driver('paymob')->custom_action([...]); // Magic method
 ```
 
 ---
@@ -106,10 +118,21 @@ $response = Payments::gateway('paymob')->status([
 
 ### MyFatoorah
 
+#### Setup for Testing
+
+Add to your `.env` file:
+```env
+PAYMENT_DRIVER=myfatoorah
+MYFATOORAH_BASE_URL=https://apitest.myfatoorah.com
+MYFATOORAH_TOKEN=your_test_token_here
+```
+
 #### Create Payment
 
 ```php
-$response = Payments::gateway('myfatoorah')->pay([
+use Payments\Facades\Payments;
+
+$response = Payments::driver('myfatoorah')->pay([
     'InvoiceValue'   => 100,
     'CustomerName'   => 'Ahmed Mohamed',
     'CustomerEmail'  => 'ahmed@example.com',
@@ -117,12 +140,17 @@ $response = Payments::gateway('myfatoorah')->pay([
     'CallbackUrl'    => route('payments.myfatoorah.callback'),
     'ErrorUrl'       => route('payments.error'),
 ]);
+
+if ($response->successful()) {
+    $data = $response->json();
+    // Handle success
+}
 ```
 
 #### Refund
 
 ```php
-$response = Payments::gateway('myfatoorah')->refund([
+$response = Payments::driver('myfatoorah')->refund([
     'Key'     => $paymentKey,
     'KeyType' => 'PaymentId',
     'Amount'  => 50,
@@ -132,7 +160,7 @@ $response = Payments::gateway('myfatoorah')->refund([
 #### Check Payment Status
 
 ```php
-$response = Payments::gateway('myfatoorah')->status([
+$response = Payments::driver('myfatoorah')->status([
     'Key'     => $paymentKey,
     'KeyType' => 'PaymentId',
 ]);
@@ -365,6 +393,146 @@ STRIPE_BASE_URL=https://api.stripe.com/v1
 PAYPAL_CLIENT_ID=your_paypal_client_id
 PAYPAL_CLIENT_SECRET=your_paypal_client_secret
 PAYPAL_BASE_URL=https://api.paypal.com
+```
+
+---
+
+## Access Actions from Config (Recommended)
+
+Define actions in config file and access them directly - no need to write endpoints in your code!
+
+### Define Actions in Config
+
+Edit `config/payments.php` and add `actions` to each driver:
+
+```php
+'paymob' => [
+    'base_url' => env('PAYMOB_BASE_URL', 'https://accept.paymob.com/api'),
+    'bearer' => env('PAYMOB_TOKEN'),
+    'actions' => [
+        'pay' => [
+            'method' => 'POST',
+            'path' => '/acceptance/payment_keys',
+        ],
+        'refund' => [
+            'method' => 'POST',
+            'path' => '/acceptance/payments/refund',
+        ],
+        'status' => [
+            'method' => 'GET',
+            'path' => '/acceptance/transactions',
+        ],
+        'custom_action' => [
+            'method' => 'POST',
+            'path' => '/acceptance/custom',
+            'options' => [
+                'headers' => ['X-Custom' => 'value'],
+            ],
+        ],
+    ],
+],
+```
+
+### Use Actions in Your Code
+
+**Method 1: Using `action()` method**
+
+```php
+use Payments\Facades\Payments;
+
+// Call action defined in config
+$response = Payments::driver('paymob')->action('pay', [
+    'amount_cents' => 10000,
+    'currency' => 'EGP',
+]);
+
+// Custom action
+$response = Payments::driver('paymob')->action('custom_action', [
+    'custom_field' => 'value',
+]);
+
+// With placeholders (e.g., /payments/{id})
+$response = Payments::driver('stripe')->action('status', [], [], [
+    'id' => 'pi_1234567890',
+]);
+```
+
+**Method 2: Magic method (shorter syntax)**
+
+```php
+// Direct call - automatically uses config action
+$response = Payments::driver('paymob')->pay([
+    'amount_cents' => 10000,
+    'currency' => 'EGP',
+]);
+
+$response = Payments::driver('paymob')->refund([
+    'transaction_id' => $transactionId,
+    'amount_cents' => 10000,
+]);
+
+$response = Payments::driver('paymob')->status([
+    'transaction_id' => $transactionId,
+]);
+
+// Custom action
+$response = Payments::driver('paymob')->custom_action([
+    'custom_field' => 'value',
+]);
+```
+
+**Method 3: Direct Methods (Simplified - Recommended)**
+
+```php
+// MyFatoorah example - all actions from config
+$response = Payments::driver('myfatoorah')->pay([
+    'InvoiceValue' => 100,
+    'CustomerName' => 'Ahmed Mohamed',
+    'CustomerEmail' => 'ahmed@example.com',
+]);
+
+$response = Payments::driver('myfatoorah')->refund([
+    'Key' => $paymentKey,
+    'KeyType' => 'PaymentId',
+    'Amount' => 50,
+]);
+
+$response = Payments::driver('myfatoorah')->status([
+    'Key' => $paymentKey,
+    'KeyType' => 'PaymentId',
+]);
+
+// With placeholders (auto-extracted from data)
+$response = Payments::driver('stripe')->status([
+    'id' => 'pi_1234567890', // Automatically used as placeholder
+]);
+```
+
+### Benefits
+
+- ✅ **Small Code**: No need to write endpoints in your application code
+- ✅ **High Performance**: Actions loaded from config cache
+- ✅ **Easy to Optimize**: All actions in one place
+- ✅ **Type Safe**: Clear action definitions
+- ✅ **Maintainable**: Change actions without touching application code
+
+### Advanced: Action Options
+
+You can add action-specific options in config:
+
+```php
+'actions' => [
+    'pay' => [
+        'method' => 'POST',
+        'path' => '/acceptance/payment_keys',
+        'options' => [
+            'timeout' => 60,
+            'headers' => [
+                'X-Custom-Header' => 'value',
+            ],
+        ],
+    ],
+],
 ```
 
 ---

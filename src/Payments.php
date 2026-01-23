@@ -3,11 +3,6 @@
 namespace Payments;
 
 use Payments\Http\PaymentsHttpClient;
-use Payments\Gateways\Contracts\PaymentGateway;
-use Payments\Gateways\MyFatoorahGateway;
-use Payments\Gateways\PaymobGateway;
-use Payments\Gateways\PaypalGateway;
-use Payments\Gateways\StripeGateway;
 
 class Payments
 {
@@ -16,29 +11,52 @@ class Payments
     ) {}
 
     /**
-     * Get the default payment driver.
+     * Get the payment driver (all actions from config).
      */
     public function driver(?string $driver = null): PaymentDriver
     {
-        $driver = $driver ?? config('payments.default');
+        $driver = $driver ?? config('payments.default', 'paymob');
 
         return new PaymentDriver($driver, $this->httpClient);
     }
 
     /**
-     * Unified layer: get a high-level gateway instance (pay / refund / status).
+     * Alias for driver() - for backward compatibility.
      */
-    public function gateway(?string $driver = null): PaymentGateway
+    public function gateway(?string $driver = null): PaymentDriver
     {
-        $driverName = $driver ?? config('payments.default');
-        $paymentDriver = $this->driver($driverName);
+        return $this->driver($driver);
+    }
 
-        return match ($driverName) {
-            'myfatoorah' => new MyFatoorahGateway($paymentDriver),
-            'paymob'     => new PaymobGateway($paymentDriver),
-            'paypal'     => new PaypalGateway($paymentDriver),
-            'stripe'     => new StripeGateway($paymentDriver),
-            default      => new PaymobGateway($paymentDriver), // fallback بسيط، ممكن تعمله GenericGateway بعدين
-        };
+    /**
+     * Pay action - uses default driver from config.
+     */
+    public function pay(array $data, ?string $driver = null)
+    {
+        return $this->driver($driver)->pay($data);
+    }
+
+    /**
+     * Refund action - uses default driver from config.
+     */
+    public function refund(array $data, ?string $driver = null)
+    {
+        return $this->driver($driver)->refund($data);
+    }
+
+    /**
+     * Status action - uses default driver from config.
+     */
+    public function status(array $data, ?string $driver = null)
+    {
+        return $this->driver($driver)->status($data);
+    }
+
+    /**
+     * Call any action from config - uses default driver.
+     */
+    public function action(string $actionName, array $payload = [], array $options = [], array $placeholders = [], ?string $driver = null)
+    {
+        return $this->driver($driver)->action($actionName, $payload, $options, $placeholders);
     }
 }
