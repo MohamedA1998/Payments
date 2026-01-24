@@ -20,37 +20,52 @@ php artisan migrate
 
 **⚠️ حل مشاكل التثبيت:**
 
-إذا واجهت خطأ مثل:
+إذا واجهت خطأ:
 ```
 symfony/css-selector v8.0.0 requires php >=8.4
+your php version (8.3.26; overridden via config.platform, actual: 8.4.17)
 ```
+
+**المشكلة:** Laravel 12 يتطلب PHP 8.4، لكن المشروع يستخدم PHP 8.3.26
 
 **الحلول:**
 
-1. **ترقية PHP إلى 8.4** (إذا كنت تستخدم Laravel 12):
-   ```bash
-   # تحقق من إصدار PHP
-   php -v
-   # يجب أن يكون >= 8.4
-   ```
+**الحل 1: تحديث config.platform.php** (الأسرع)
 
-2. **تحديث config.platform.php** في `composer.json` لمشروعك:
-   ```json
-   {
-       "config": {
-           "platform": {
-               "php": "8.3.26"  // يجب أن يطابق الإصدار الفعلي
-           }
-       }
-   }
-   ```
+في `composer.json` لمشروعك، احذف أو حدث `config.platform.php`:
 
-3. **استخدام Laravel 11** بدلاً من 12 (إذا لم تستطع ترقية PHP):
-   ```bash
-   composer require laravel/framework:^11.0
-   ```
+```json
+{
+    "config": {
+        "platform": {
+            "php": "8.3.26"  // يجب أن يطابق الإصدار الفعلي (php -v)
+        }
+    }
+}
+```
 
-**ملاحظة:** الباكدج لا يضيف أي dependencies إضافية. المشكلة في متطلبات Laravel 12.
+ثم:
+```bash
+composer update --no-scripts
+composer require mohameda1998/payments:dev-main
+```
+
+**الحل 2: ترقية PHP إلى 8.4** (إذا كنت تستخدم Laravel 12)
+
+```bash
+# تحقق من إصدار PHP
+php -v
+# يجب أن يكون >= 8.4
+```
+
+**الحل 3: استخدام Laravel 11** (إذا لم تستطع ترقية PHP)
+
+```bash
+composer require laravel/framework:^11.0
+composer require mohameda1998/payments:dev-main
+```
+
+**ملاحظة:** الباكدج لا يضيف أي dependencies إضافية. المشكلة في متطلبات Laravel 12 + PHP version.
 
 ## الإعدادات
 
