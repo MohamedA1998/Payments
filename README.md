@@ -2,6 +2,13 @@
 
 حزمة Laravel موحدة لمعالجة المدفوعات مع بوابات متعددة (MyFatoorah, Paymob, PayPal, Stripe).
 
+## المتطلبات
+
+- PHP >= 8.1
+- Laravel >= 10.0
+
+**ملاحظة:** إذا كنت تستخدم Laravel 12، تأكد من أن PHP version >= 8.4
+
 ## التثبيت
 
 ```bash
@@ -10,6 +17,10 @@ php artisan vendor:publish --tag=payments-config
 php artisan vendor:publish --tag=payments-migrations
 php artisan migrate
 ```
+
+**ملاحظة:** إذا واجهت مشكلة في التثبيت بسبب PHP version، تأكد من:
+1. أن PHP version يطابق متطلبات Laravel
+2. أو احذف `config.platform.php` من `composer.json` إذا كان يسبب مشاكل
 
 ## الإعدادات
 
