@@ -18,9 +18,39 @@ php artisan vendor:publish --tag=payments-migrations
 php artisan migrate
 ```
 
-**ملاحظة:** إذا واجهت مشكلة في التثبيت بسبب PHP version، تأكد من:
-1. أن PHP version يطابق متطلبات Laravel
-2. أو احذف `config.platform.php` من `composer.json` إذا كان يسبب مشاكل
+**⚠️ حل مشاكل التثبيت:**
+
+إذا واجهت خطأ مثل:
+```
+symfony/css-selector v8.0.0 requires php >=8.4
+```
+
+**الحلول:**
+
+1. **ترقية PHP إلى 8.4** (إذا كنت تستخدم Laravel 12):
+   ```bash
+   # تحقق من إصدار PHP
+   php -v
+   # يجب أن يكون >= 8.4
+   ```
+
+2. **تحديث config.platform.php** في `composer.json` لمشروعك:
+   ```json
+   {
+       "config": {
+           "platform": {
+               "php": "8.3.26"  // يجب أن يطابق الإصدار الفعلي
+           }
+       }
+   }
+   ```
+
+3. **استخدام Laravel 11** بدلاً من 12 (إذا لم تستطع ترقية PHP):
+   ```bash
+   composer require laravel/framework:^11.0
+   ```
+
+**ملاحظة:** الباكدج لا يضيف أي dependencies إضافية. المشكلة في متطلبات Laravel 12.
 
 ## الإعدادات
 
